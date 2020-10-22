@@ -1,8 +1,8 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { BehaviorSubject, combineLatest, interval, Observable, of } from 'rxjs';
 import { Component, OnInit } from '@angular/core';
 import { FormControl } from "@angular/forms";
-import { debounceTime, filter, switchMap, tap } from 'rxjs/operators';
+import { catchError, concatMap, debounceTime, delay, distinctUntilChanged, exhaustMap, filter, map, mergeMap, shareReplay, startWith, switchMap, tap } from 'rxjs/operators';
 import { Flight } from '@flight-workspace/flight-lib';
 
 @Component({
@@ -16,31 +16,46 @@ export class FlightLookaheadComponent implements OnInit {
     }
 
     control: FormControl;
+
     flights$: Observable<Flight[]>;
-    loading = false;
-
-
-
-
-
-
-
-
-
+    loading$ = new BehaviorSubject<boolean>(false);
+    online$: Observable<boolean>;
 
     ngOnInit() {
         this.control = new FormControl();
 
-        this.flights$ = this
-                            .control
-                            .valueChanges
-                            .pipe(
-                              filter(v => v.length >= 3),
-                              debounceTime(300),
-                              tap(v => this.loading = true),
-                              switchMap(name => this.load(name)),
-                              tap(v => this.loading = false)
-                            );
+
+        this.online$ 
+                = interval(2000).pipe( // 1, 2, 3, 4, ...
+                        startWith(0), // 0, 1, 2, 3, 4, ...
+                        // map(_ => Math.random() < 0.5), // t, t, t, f, f, t
+                        map(_ => true),
+                        distinctUntilChanged(), // t, f, t
+                        shareReplay(1),
+                );
+
+        const input$ =  this.control.valueChanges.pipe(
+            filter(v => v.length >= 3),
+            debounceTime(300),
+        )
+
+        this.flights$ = combineLatest([input$, this.online$]).pipe(
+            // [input, online]
+            filter( ([_, online]) => online),
+            // [input, online] --> input
+            map(([input, _]) => input ),
+            tap(v => this.loading$.next(true)),
+            switchMap(input => this.load(input)),
+            tap(v => this.loading$.next(false))
+        )
+
+        //  this
+        //                     .control
+        //                     .valueChanges
+        //                     .pipe(
+        //                      
+                             
+        //                     );
     }
 
     load(from: string)  {
@@ -52,8 +67,13 @@ export class FlightLookaheadComponent implements OnInit {
         const headers = new HttpHeaders()
                             .set('Accept', 'application/json');
 
-        return this.http.get<Flight[]>(url, {params, headers});
-
+        return this.http.get<Flight[]>(url, {params, headers}).pipe(
+            catchError(err => {
+                console.error('err', err);
+                return of([]);
+                // return throwError(err);
+            }),
+        )
     };
 
 
