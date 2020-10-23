@@ -1,4 +1,5 @@
 import {Component, OnInit} from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import {ActivatedRoute} from '@angular/router';
 
 @Component({
@@ -10,7 +11,22 @@ export class FlightEditComponent implements OnInit {
   showDetails: string;
   showWarning = false;
 
-  constructor(private route: ActivatedRoute) {
+  formGroup: FormGroup;
+
+  constructor(
+    private formBuilder: FormBuilder,
+    private route: ActivatedRoute) {
+
+      this.formGroup = this.formBuilder.group({
+        'id': ['0', Validators.required],
+        'from': [],
+        'to': [],
+        'date': []
+      });
+
+      // this.formGroup.controls['from'].valueChanges
+      // this.formGroup.valueChanges;
+
   }
 
   ngOnInit() {

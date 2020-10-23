@@ -16,6 +16,16 @@
   <div class="content">
     <p>Id: {{id}}</p>
     <p>ShowDetails: {{showDetails}}</p>
+
+
+    <form [formGroup]="formGroup">
+      <input formControlName="id">
+      <input formControlName="from">
+      <input formControlName="to">
+      <input formControlName="date">
+
+    </form>
+
   </div>
 </div>
 

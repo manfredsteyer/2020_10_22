@@ -8,9 +8,13 @@ import {FlightService} from '@flight-workspace/flight-lib';
 })
 export class FlightSearchComponent implements OnInit {
 
-  from = 'Hamburg'; // in Germany
-  to = 'Graz'; // in Austria
-  urgent = false;
+  public from = 'Hamburg'; // in Germany
+  public to = 'Graz'; // in Austria
+  public urgent = false;
+
+
+  public flights$ = this.flightService.flights$;
+
 
   get flights() {
     return this.flightService.flights;
